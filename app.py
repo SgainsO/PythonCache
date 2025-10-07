@@ -1,14 +1,21 @@
+import random
+
+
 class CacheManager:
     def __init__(self, totalCache, blockSize, numberOfWays):
         self.totalCache = totalCache
         self.blockSize = blockSize
         self.numberOfWays = numberOfWays
-        totalLines = self.totalCache / self.blockSize
-        self.LinesOneWay = totalLines / self.numberOfWays
+        totalLines = self.totalCache // self.blockSize
+        self.LinesOneWay = totalLines // self.numberOfWays
         self.Cache = self.createCache()
         self.total = 0
         self.miss = 0
     
+    def retMissRate(self):
+        return self.miss / self.total
+
+
     def trunMem(self, input):
         return input << 12
     
@@ -25,7 +32,7 @@ class CacheManager:
         x = dMemLoc % self.LinesOneWay
         for i in range(len(self.Cache)):
             for cacheItem in self.Cache[i][x]:
-                if cacheItem[0] == dMemLoc:
+                if not isinstance(cacheItem, int) and cacheItem[0] == dMemLoc:
                     return data
         self.miss += 1
         return -999
@@ -37,15 +44,18 @@ class CacheManager:
             for j, cacheItem in enumerate(self.Cache[i][x]):
                 if cacheItem == 0:
                     save = [i, x, j]
-        self.Cache[save[0]][save[1]][save[2]] = [dMemLoc, data]
-        return self.Cache[random.randint(0, (self.numberOfWays - 1))][x][random.randint(0, self.blockSize - 1)]
+                    self.Cache[save[0]][save[1]][save[2]] = [dMemLoc, data]
+
+        self.Cache[random.randint(0, (self.numberOfWays - 1))][x][random.randint(0, self.blockSize - 1)]
+        return 
         
 
 cacheCheck = CacheManager(4096, 8, 1)
 with open("test.memtrace", "r+") as file:
     for line in file:
         data = line.split(" ")
-        if cacheCheck.CheckInCache(data[1], int(data[2])) == -999:
-            cacheCheck.PutInCache(data[1], int(data[2]))
+        data[2] = cacheCheck.trunMem(int(data[2], 16))
+        if cacheCheck.CheckInCache(data[1], data[2]) == -999:
+            cacheCheck.PutInCache(data[1], data[2])
 
-print(cacheCheck)
+print(cacheCheck.retMissRate())
