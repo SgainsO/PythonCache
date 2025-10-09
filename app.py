@@ -1,5 +1,5 @@
 import random
-
+from collections import defaultdict
 
 class CacheManager:
     def __init__(self, totalCache, blockSize, numberOfWays):
@@ -11,6 +11,8 @@ class CacheManager:
         self.Cache = self.createCache()
         self.total = 0
         self.miss = 0
+        self.saved = defaultdict(int)
+
     
     def retMissRate(self):
         return self.miss / self.total
@@ -33,6 +35,7 @@ class CacheManager:
         for i in range(len(self.Cache)):
             for cacheItem in self.Cache[i][x]:
                 if not isinstance(cacheItem, int) and cacheItem[0] == dMemLoc:
+                    self.saved[dMemLoc] += 1
                     return data
         self.miss += 1
         return -999
@@ -40,15 +43,27 @@ class CacheManager:
     def PutInCache(self, data, dMemLoc):
         x = dMemLoc % self.LinesOneWay
         save = -1
+
+        highest = -1
+        saveMem = 0
+
         for i in range(len(self.Cache)):
             for j, cacheItem in enumerate(self.Cache[i][x]):
+                print(cacheItem)
                 if cacheItem == 0:
                     save = [i, x, j]
                     self.Cache[save[0]][save[1]][save[2]] = [dMemLoc, data]
-
-        self.Cache[random.randint(0, (self.numberOfWays - 1))][x][random.randint(0, self.blockSize - 1)]
-        return 
-        
+                    print("-")
+                    return 
+                else:
+                    print(self.saved[cacheItem[0]])
+                    if self.saved[cacheItem[0]] > highest:
+                        saveMem = cacheItem[0]
+                        highest = self.saved[cacheItem[0]]
+                        save = [i, x, j]
+        self.Cache[save[0]][x][save[2]] = [dMemLoc, data]
+        print("------")
+        return
 
 cacheCheck = CacheManager(4096, 8, 1)
 with open("test.memtrace", "r+") as file:
